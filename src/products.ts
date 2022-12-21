@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { createConnection, Connection, QueryError, FieldPacket } from "mysql2";
 
-export default (request: VercelRequest, response: VercelResponse) => {
+export default async (request: VercelRequest, response: VercelResponse) => {
   const {DATABASE_URL} = process.env;
   console.log('DATABASE_URL',DATABASE_URL);
   if (!DATABASE_URL) {
@@ -14,19 +14,20 @@ export default (request: VercelRequest, response: VercelResponse) => {
   }
   const id = request.query['id'] as string;
   const connection = createConnection(DATABASE_URL);
-  const products = runParameterizedSQLQuery(
+  const products = await runParameterizedSQLQuery(
     connection,
     'select * from PRODUCTS where id = ?',
     [id]
   );
+  console.log('Length', products.length)
   response.send(products);
 };
 
-function runParameterizedSQLQuery<T>(
+function runParameterizedSQLQuery(
   connection: Connection,
   sql: string,
   fields: string[]
-): Promise<T[]> {
+): Promise<any[]> {
   return new Promise((resolve, reject) => {
     connection.query(
       sql,
