@@ -2,7 +2,9 @@ import { VercelRequest, VercelResponse } from "@vercel/node";
 import { createConnection, Connection, QueryError, FieldPacket } from "mysql2";
 
 export default (request: VercelRequest, response: VercelResponse) => {
-  if (!process.env.DATABASE_URL) {
+  const {DATABASE_URL} = process.env;
+  console.log('DATABASE_URL',DATABASE_URL);
+  if (!DATABASE_URL) {
     response.status(500).send("Server config problem");
     return;
   }
@@ -11,7 +13,7 @@ export default (request: VercelRequest, response: VercelResponse) => {
     return;
   }
   const id = request.query['id'] as string;
-  const connection = createConnection(process.env.DATABASE_URL);
+  const connection = createConnection(DATABASE_URL);
   const products = runParameterizedSQLQuery(
     connection,
     'select * from PRODUCTS where id = ?',
