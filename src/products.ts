@@ -15,8 +15,10 @@ const handler = async (request: VercelRequest, response: VercelResponse) => {
   const connection = createConnection(DATABASE_URL);
   let rawProducts = [];
   if (id) {
+    console.log('Searching by id', id);
     rawProducts = await getProductsById(connection, id);
   } else if (page && pageSize ) {
+    console.log('Searching by page', page, pageSize);
     rawProducts = await getProducts(connection, page, pageSize);
   } else {
     response.status(400).send("Invalid input parámeters");
