@@ -2,24 +2,25 @@ import { VercelRequest, VercelResponse } from "@vercel/node";
 import { createConnection, Connection, QueryError, FieldPacket } from "mysql2";
 
 export default async (request: VercelRequest, response: VercelResponse) => {
-  const {DATABASE_URL} = process.env;
-  console.log('DATABASE_URL',DATABASE_URL);
+  const { DATABASE_URL } = process.env;
+  console.log("DATABASE_URL", DATABASE_URL);
   if (!DATABASE_URL) {
     response.status(500).send("Server config problem");
     return;
   }
-  if (request.method !== 'GET') {
+  if (request.method !== "GET") {
     response.status(405).send("Method Not Allowed");
     return;
   }
-  const id = request.query['id'] as string;
+  const id = request.query["id"] as string;
   const connection = createConnection(DATABASE_URL);
-  const products = await runParameterizedSQLQuery(
+  const rawProducts = await runParameterizedSQLQuery(
     connection,
-    'select * from PRODUCTS where id = ?',
+    "select * from PRODUCTS where id = ?",
     [id]
   );
-  console.log('Length', products.length)
+  const products = deserializeFields(rawProducts);
+  console.log("Length", products.length);
   response.send(products);
 };
 
@@ -42,4 +43,14 @@ function runParameterizedSQLQuery(
       }
     );
   });
+}
+
+function deserializeFields(rawProducts: any[]): any[] {
+  return rawProducts.map((product) => deserializeFieldProduct(product));
+}
+
+function deserializeFieldProduct(product: any): any {
+  product.options = JSON.parse(product.options);
+  product.price = JSON.parse(product.price);
+  return {...product};
 }
