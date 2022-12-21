@@ -10,7 +10,7 @@ export default (request: VercelRequest, response: VercelResponse) => {
     response.status(405).send("Method Not Allowed");
     return;
   }
-  const id = getPathParam( request.url ?? '' );
+  const id = request.query['id'] as string;
   const connection = createConnection(process.env.DATABASE_URL);
   const products = runParameterizedSQLQuery(
     connection,
@@ -40,13 +40,3 @@ function runParameterizedSQLQuery<T>(
     );
   });
 }
-
-function getPathParam(incomingUrl: string):string{
-  const urlObj = new URL(incomingUrl);
-  const {pathname} = urlObj;
-  const paths = pathname.split('/');
-  console.log(paths);
-  return paths.length>=4 ? paths[3] : '';
-}
-
-// console.log(getPathParam('https://the-phone-ka9oo8o78-vladimirbat.vercel.app/api/products/abc123'));
