@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { createConnection, Connection, QueryError } from "mysql2";
+import { SearchPhonesResponse } from "./model/api.model";
 import { Product } from "./model/products.model";
 
 type HandlerFunction = (request: VercelRequest, response: VercelResponse) => void;
@@ -10,23 +11,31 @@ const handler = async (request: VercelRequest, response: VercelResponse) => {
     return;
   }
   const id = request.query["id"] as string;
-  const page = request.query["page"] as string;
-  const pageSize = request.query["pageSize"] as string;
+  const pageStr = request.query["page"] as string;
+  const pageSizeStr = request.query["pageSize"] as string;
   const connection = createConnection(DATABASE_URL);
   let rawProducts = [];
   if (id) {
     console.log('Searching by id', id);
     rawProducts = await getProductsById(connection, id);
-  } else if (page && pageSize ) {
-    console.log('Searching by page', page, pageSize);
-    rawProducts = await getProducts(connection, page, pageSize);
+  } else if (pageStr && pageSizeStr ) {
+    console.log('Searching by page', pageStr, pageSizeStr);
+    rawProducts = await getProducts(connection, pageStr, pageSizeStr);
   } else {
     response.status(400).send("Invalid input parámeters");
     return;
   }
   const products = deserializeFields(rawProducts);
   console.log("Length", products.length);
-  response.send(products);
+  const page = parseInt(pageStr);
+  const pageSize = parseInt(pageSizeStr);
+  const searchPhonesResponse: SearchPhonesResponse = {
+    total:12,
+    page,
+    pageSize,
+    products,
+  }
+  response.send(searchPhonesResponse);
 };
 
 function getProductsById(connection: Connection, id: string): Promise<Product[]> {
