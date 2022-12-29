@@ -15,12 +15,15 @@ const handler = async (request: VercelRequest, response: VercelResponse) => {
   const pageSizeStr = request.query["pageSize"] as string;
   const connection = createConnection(DATABASE_URL);
   let rawProducts = [];
+  let total = 1;
   if (id) {
     console.log('Searching by id', id);
     rawProducts = await getProductsById(connection, id);
   } else if (pageStr && pageSizeStr ) {
     console.log('Searching by page', pageStr, pageSizeStr);
-    rawProducts = await getProducts(connection, pageStr, pageSizeStr);
+    const resultArray = await Promise.all([getProducts(connection, pageStr, pageSizeStr), getProductsCount(connection)]);
+    rawProducts = resultArray[0];
+    total = resultArray[1];
   } else {
     response.status(400).send("Invalid input parámeters");
     return;
@@ -30,7 +33,7 @@ const handler = async (request: VercelRequest, response: VercelResponse) => {
   const page = parseInt(pageStr);
   const pageSize = parseInt(pageSizeStr);
   const searchPhonesResponse: SearchPhonesResponse = {
-    total:12,
+    total,
     page,
     pageSize,
     products,
@@ -50,12 +53,31 @@ function getProducts(connection: Connection, pageStr: string, pageSizeStr: strin
   return promisedQuery(connection, sql, [jump, pageSize]);
 }
 
+function getProductsCount(connection: Connection): Promise<number> {
+  const sql = "select count(id) as total from PRODUCTS";
+  return query<{total:number}>(connection, sql).then((data) => data[0].total);
+}
+
 function promisedQuery(connection: Connection, sql: string, params: unknown[]): Promise<Product[]> {
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     connection.query(sql, [...params], (err: QueryError | null, result: any[]) => {
       if (!err) {
         resolve(result);
+      } else {
+        console.log("err =>", err);
+        reject(err);
+      }
+    });
+  });
+}
+
+function query<T>(connection: Connection, sql: string): Promise<T[]> {
+  return new Promise((resolve, reject) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    connection.query(sql, [], (err: QueryError | null, result: any[]) => {
+      if (!err) {
+        resolve(result as T[]);
       } else {
         console.log("err =>", err);
         reject(err);
