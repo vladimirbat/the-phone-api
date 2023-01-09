@@ -1,7 +1,7 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { createConnection, Connection, QueryError } from "mysql2";
-import { SearchPhonesResponse } from "./model/api.model";
-import { Product } from "./model/products.model";
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { Connection, createConnection, QueryError } from 'mysql2';
+import { SearchPhonesResponse } from './model/api.model';
+import { Product } from './model/products.model';
 
 type HandlerFunction = (request: VercelRequest, response: VercelResponse) => void;
 
@@ -10,9 +10,9 @@ const handler = async (request: VercelRequest, response: VercelResponse) => {
   if (!isRequestOk(request, response)) {
     return;
   }
-  const id = request.query["id"] as string;
-  const pageStr = request.query["page"] as string;
-  const pageSizeStr = request.query["pageSize"] as string;
+  const id = request.query['id'] as string;
+  const pageStr = request.query['page'] as string;
+  const pageSizeStr = request.query['pageSize'] as string;
   const connection = createConnection(DATABASE_URL);
   let rawProducts = [];
   let total = 1;
@@ -25,11 +25,11 @@ const handler = async (request: VercelRequest, response: VercelResponse) => {
     rawProducts = resultArray[0];
     total = resultArray[1];
   } else {
-    response.status(400).send("Invalid input parámeters");
+    response.status(400).send('Invalid input parámeters');
     return;
   }
   const products = deserializeFields(rawProducts);
-  console.log("Length", products.length);
+  console.log('Length', products.length);
   const page = parseInt(pageStr);
   const pageSize = parseInt(pageSizeStr);
   const searchPhonesResponse: SearchPhonesResponse = {
@@ -42,11 +42,11 @@ const handler = async (request: VercelRequest, response: VercelResponse) => {
 };
 
 function getProductsById(connection: Connection, id: string): Promise<Product[]> {
-  const sql = "select * from PRODUCTS where id = ?";
+  const sql = 'select * from PRODUCTS where id = ?';
   return promisedQuery(connection, sql, [id]);
 }
 function getProducts(connection: Connection, pageStr: string, pageSizeStr: string): Promise<Product[]> {
-  const sql = "select * from PRODUCTS limit ?,?";
+  const sql = 'select * from PRODUCTS limit ?,?';
   const page = parseInt(pageStr);
   const pageSize = parseInt(pageSizeStr);
   const jump = pageSize * (page - 1);
@@ -54,7 +54,7 @@ function getProducts(connection: Connection, pageStr: string, pageSizeStr: strin
 }
 
 function getProductsCount(connection: Connection): Promise<number> {
-  const sql = "select count(id) as total from PRODUCTS";
+  const sql = 'select count(id) as total from PRODUCTS';
   return query<{total:number}>(connection, sql).then((data) => data[0].total);
 }
 
@@ -65,7 +65,7 @@ function promisedQuery(connection: Connection, sql: string, params: unknown[]): 
       if (!err) {
         resolve(result);
       } else {
-        console.log("err =>", err);
+        console.log('err =>', err);
         reject(err);
       }
     });
@@ -79,7 +79,7 @@ function query<T>(connection: Connection, sql: string): Promise<T[]> {
       if (!err) {
         resolve(result as T[]);
       } else {
-        console.log("err =>", err);
+        console.log('err =>', err);
         reject(err);
       }
     });
@@ -99,25 +99,26 @@ function deserializeFieldProduct(product: Product): Product {
 function isRequestOk(request: VercelRequest, response: VercelResponse): boolean {
   const { DATABASE_URL } = process.env;
   if (!DATABASE_URL) {
-    response.status(500).send("Server config problem");
+    response.status(500).send('Server config problem');
     return false;
   }
-  if (request.method !== "GET") {
-    response.status(405).send("Method Not Allowed");
+  if (request.method !== 'GET') {
+    response.status(405).send('Method Not Allowed');
     return false;
   }
   return true;
 }
 
 const allowCors = (fn: HandlerFunction) => async (req: VercelRequest, res: VercelResponse) => {
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
+  res.setHeader('Cache-Control', 'max-age=3600')
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
