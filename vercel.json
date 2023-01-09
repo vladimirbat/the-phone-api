@@ -1,0 +1,22 @@
+{
+  "headers": [
+    {
+      "source": "\/phone-images\/*.*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "max-age=7200"
+        }
+      ]
+    },
+    {
+      "source": "\/public\/phone-images\/*.*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "max-age=7200"
+        }
+      ]
+    }
+  ]
+}
