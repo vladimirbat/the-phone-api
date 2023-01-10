@@ -58,7 +58,7 @@ function getProducts(connection: Connection, pageStr: string, pageSizeStr: strin
 
 function getProductsCount(connection: Connection, searchQuery: string): Promise<number> {
   const search = `%${searchQuery}%`;
-  const sql = `select count(id) as total from PRODUCTS where (MODEL like '${search}') or (BRAND like '${search})'`;
+  const sql = `select count(id) as total from PRODUCTS where (MODEL like '${search}') or (BRAND like '${search}')`;
   return query<{total:number}>(connection, sql).then((data) => data[0].total);
 }
 
