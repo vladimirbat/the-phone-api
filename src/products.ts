@@ -13,6 +13,7 @@ const handler = async (request: VercelRequest, response: VercelResponse) => {
   const id = request.query['id'] as string;
   const pageStr = request.query['page'] as string;
   const pageSizeStr = request.query['pageSize'] as string;
+  const query = request.query['query'] as string;
   const connection = createConnection(DATABASE_URL);
   let rawProducts = [];
   let total = 1;
@@ -21,7 +22,8 @@ const handler = async (request: VercelRequest, response: VercelResponse) => {
     rawProducts = await getProductsById(connection, id);
   } else if (pageStr && pageSizeStr ) {
     console.log('Searching by page', pageStr, pageSizeStr);
-    const resultArray = await Promise.all([getProducts(connection, pageStr, pageSizeStr), getProductsCount(connection)]);
+    const searchQuery = query ? query : '';
+    const resultArray = await Promise.all([getProducts(connection, pageStr, pageSizeStr, searchQuery), getProductsCount(connection, searchQuery)]);
     rawProducts = resultArray[0];
     total = resultArray[1];
   } else {
@@ -45,16 +47,18 @@ function getProductsById(connection: Connection, id: string): Promise<Product[]>
   const sql = 'select * from PRODUCTS where id = ?';
   return promisedQuery(connection, sql, [id]);
 }
-function getProducts(connection: Connection, pageStr: string, pageSizeStr: string): Promise<Product[]> {
-  const sql = 'select * from PRODUCTS limit ?,?';
+function getProducts(connection: Connection, pageStr: string, pageSizeStr: string, searchQuery:string): Promise<Product[]> {
+  const sql = 'select * from PRODUCTS where (MODEL LIKE ?) OR (BRAND LIKE ?) limit ?,?';
+  const search = `%${searchQuery}%`;
   const page = parseInt(pageStr);
   const pageSize = parseInt(pageSizeStr);
   const jump = pageSize * (page - 1);
-  return promisedQuery(connection, sql, [jump, pageSize]);
+  return promisedQuery(connection, sql, [search, search, jump, pageSize]);
 }
 
-function getProductsCount(connection: Connection): Promise<number> {
-  const sql = 'select count(id) as total from PRODUCTS';
+function getProductsCount(connection: Connection, searchQuery: string): Promise<number> {
+  const search = `%${searchQuery}%`;
+  const sql = `select count(id) as total from PRODUCTS where MODEL LIKE '${search}' OR (BRAND like '${search})'`;
   return query<{total:number}>(connection, sql).then((data) => data[0].total);
 }
 
