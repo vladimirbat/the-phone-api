@@ -48,17 +48,23 @@ function getProductsById(connection: Connection, id: string): Promise<Product[]>
   return promisedQuery(connection, sql, [id]);
 }
 function getProducts(connection: Connection, pageStr: string, pageSizeStr: string, searchQuery:string): Promise<Product[]> {
-  const sql = 'select * from PRODUCTS where (MODEL LIKE ?) OR (BRAND LIKE ?) limit ?,?';
+  const sql = searchQuery ? 
+    'select * from PRODUCTS where (MODEL LIKE ?) OR (BRAND LIKE ?) limit ?,?'
+    :'select * from PRODUCTS limit ?,?' ;
   const search = `%${searchQuery}%`;
   const page = parseInt(pageStr);
   const pageSize = parseInt(pageSizeStr);
   const jump = pageSize * (page - 1);
-  return promisedQuery(connection, sql, [search, search, jump, pageSize]);
+  return searchQuery ? 
+    promisedQuery(connection, sql, [search, search, jump, pageSize])
+    : promisedQuery(connection, sql, [jump, pageSize]);
 }
 
 function getProductsCount(connection: Connection, searchQuery: string): Promise<number> {
   const search = `%${searchQuery}%`;
-  const sql = `select count(id) as total from PRODUCTS where (MODEL like '${search}') or (BRAND like '${search}')`;
+  const sql = searchQuery ?
+   `select count(id) as total from PRODUCTS where (MODEL like '${search}') or (BRAND like '${search}')`
+   : `select count(id) as total from PRODUCTS`;
   return query<{total:number}>(connection, sql).then((data) => data[0].total);
 }
 
